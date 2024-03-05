@@ -103,84 +103,90 @@ const GameBoard = (function() {
 })();
 
 const GameController = (function() {
-    const board = GameBoard;
-    const players = Players;
+    let name;
+    let token;
+    let turnCount = 0;
 
-    const printRound = () => {
-        console.log(`${players.getActivePlayer().name}'s turn`);
+
+    const printTurn = () => {
+        console.log(`Turn ${turnCount}: ${Players.getActivePlayer().name}'s turn`);
     };
 
-    // // player 1 win along column 1
-    // let move1 = [0, 0];
-    // let move2 = [2, 2];
-    // let move3 = [2, 0];
-    // let move4 = [2, 1];
-    // let move5 = [1, 0];
+    const playTurn = (row, col) => {
+        name = Players.getActivePlayer().name;
+        token = Players.getActivePlayer().token;
 
-    // let moves = [
-    //     move1,
-    //     move2,
-    //     move3,
-    //     move4,
-    //     move5,
-    // ]
+        turnCount++;
+        
+        printTurn();
+        GameBoard.placeToken(row, col, token);
 
-    // // player 2 win along diagonal top left to bottom right
-    // let move1 = [0, 2];
-    // let move2 = [0, 0];
-    // let move3 = [1, 0];
-    // let move4 = [1, 1];
-    // let move5 = [2, 0];
-    // let move6 = [2, 2];
-
-    // let moves = [
-    //     move1,
-    //     move2,
-    //     move3,
-    //     move4,
-    //     move5,
-    //     move6,
-    // ]
-
-    // player 1 win on last move along bottom row
-    // accidentally wins on move 7 from top right to bottom left
-    let move1 = [2, 0];
-    let move2 = [0, 0];
-    let move3 = [1, 1];
-    let move4 = [0, 1];
-    let move5 = [2, 1];
-    let move6 = [1, 2];
-    let move7 = [0, 2];
-    let move8 = [1, 0];
-    let move9 = [2, 2];
-
-    let moves = [
-        move1,
-        move2,
-        move3,
-        move4,
-        move5,
-        move6,
-        move7,
-        move8,
-        move9,
-    ]
-    let count = 0;
-    for (let move of moves) {
-        count += 1;
-        console.log(`Turn ${count}`);
-        printRound();
-        console.log(`Placing at ${move}...`);
-        board.placeToken(...move, players.getActivePlayer().token);
-        board.print();
-
-        if (board.checkForWin(players.getActivePlayer().token)) {
-            console.log(`${players.getActivePlayer().name} wins!`);
+        if (GameBoard.checkForWin(token)) {
+            console.log(`${name} wins!`);
             return;
-        };
+        } else if (turnCount === 9) {
+            console.log(`Match ends in a tie!`);
+            return;
+        }
 
-        players.switchPlayer();
+        Players.switchPlayer();
     };
 
+    return {
+        printTurn,
+        playTurn,
+    }
+
+})();
+
+const ScreenController = (function() {
+
+    players = Players;
+    board = GameBoard;
+    game = GameController;
+
+    const boardButtons = document.querySelectorAll('.board-button');
+
+    function clickHandlerBoard(e) {
+        const selectedCell = e.target;
+
+        let row = selectedCell.dataset.row;
+        let col = selectedCell.dataset.col;
+
+        game.playTurn(row, col);
+        
+        updateScreen();
+    }
+
+    const initBoard = () => {
+        boardButtons.forEach((button) => {
+            button.innerText = '';
+            button.addEventListener('click', clickHandlerBoard);
+        });
+        
+    }
+    
+    const updateScreen = () => {
+        const boardState = board.getBoard();
+        let index = 0;
+
+        boardButtons.forEach((button) => {
+            button.innerText = '';
+        });
+
+        boardState.forEach(row => {
+            row.forEach(cell => {
+                // console.log(`${cell.getValue()} at ${boardButtons[index].dataset.row}, ${boardButtons[index].dataset.col}`);
+                // console.log(boardButtons[index]);
+                if (cell.getValue() !== 0) {
+                    boardButtons[index].innerText = cell.getValue();
+                }
+                index++;
+            })
+        });
+
+    };
+
+    initBoard();
 
 })();
