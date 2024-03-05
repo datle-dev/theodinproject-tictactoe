@@ -55,11 +55,11 @@ const GameBoard = (function() {
         boardValues.forEach(row => console.log(row));
     };
 
-    const placeToken = (x, y, player) => {
-        if (board[x][y].getValue() !== 0) {
+    const placeToken = (row, col, player) => {
+        if (board[row][col].getValue() !== 0) {
             throw new Error('Cannot place token there');
         } else {
-            board[x][y].setToken(player);
+            board[row][col].setToken(player);
         }
     };
 
