@@ -1,0 +1,11 @@
+#board {
+    display: grid;
+    grid-template-rows: repeat(3, 100px);
+    grid-template-columns: repeat(3, 100px);
+    justify-content: center;
+    border: 1px solid black;
+}
+
+.board-button {
+    font-size: x-large;
+}
