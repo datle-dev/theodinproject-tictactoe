@@ -24,6 +24,7 @@ const Players = (function() {
 
 const Cell = (function() {
     let value = 0;
+    let win = false;
 
     const setToken = (player) => {
         value = player;
@@ -42,6 +43,7 @@ const Cell = (function() {
 
 const GameBoard = (function() {
     let board = [];
+    let win = false;
 
     for (let i = 0; i < 3; i++) {
         board[i] = [];
@@ -65,21 +67,23 @@ const GameBoard = (function() {
 
     const getBoard = () => board;
 
+    const getWin = () => win;
+
     const checkThreeInRow = (row, player) => {
-        const isThreeInRow = (cell) => cell === player;
+        const isThreeInRow = (cell) => cell.getValue() === player;
         return row.every(isThreeInRow);
     };
 
     const checkForWin = (player) => {
         const winDirections = {
-            'topRow': board[0].map(cell => cell.getValue()),
-            'middleRow': board[1].map(cell => cell.getValue()),
-            'bottomRow': board[2].map(cell => cell.getValue()),
-            'leftColumn': board.map(row => row[0].getValue()),
-            'middleColumn': board.map(row => row[1].getValue()),
-            'rightColumn': board.map(row => row[2].getValue()),
-            'topLeftBottomRight': [board[0][0], board[1][1], board[2][2]].map(cell => cell.getValue()),
-            'topRightBottomLeft': [board[0][2], board[1][1], board[2][0]].map(cell => cell.getValue()),
+            'topRow': board[0].map(cell => cell),
+            'middleRow': board[1].map(cell => cell),
+            'bottomRow': board[2].map(cell => cell),
+            'leftColumn': board.map(row => row[0]),
+            'middleColumn': board.map(row => row[1]),
+            'rightColumn': board.map(row => row[2]),
+            'topLeftBottomRight': [board[0][0], board[1][1], board[2][2]],
+            'topRightBottomLeft': [board[0][2], board[1][1], board[2][0]],
         }
 
         for (let key of Object.keys(winDirections)) {
@@ -87,6 +91,8 @@ const GameBoard = (function() {
             // console.log(`${key}, ${row}`);
             if (checkThreeInRow(row, player)) {
                 console.log(`Win along ${key}!`);
+                row.forEach(cell => cell.win = true);
+                win = true;
                 return true;
             }
         }
@@ -98,6 +104,7 @@ const GameBoard = (function() {
         placeToken,
         getBoard,
         checkForWin,
+        getWin,
     }
 
 })();
@@ -132,9 +139,12 @@ const GameController = (function() {
         Players.switchPlayer();
     };
 
+    const getTurnCount = () => turnCount;
+
     return {
         printTurn,
         playTurn,
+        getTurnCount,
     }
 
 })();
@@ -145,6 +155,7 @@ const ScreenController = (function() {
     board = GameBoard;
     game = GameController;
 
+    const turnDisplay = document.querySelector('#turn');
     const boardButtons = document.querySelectorAll('.board-button');
 
     function clickHandlerBoard(e) {
@@ -156,6 +167,14 @@ const ScreenController = (function() {
         game.playTurn(row, col);
         
         updateScreen();
+
+        if (board.getWin()) {
+            endGame();
+            turnDisplay.innerText = `Game over! ${players.getActivePlayer().name} wins!`;
+        } else if (game.getTurnCount() === 9) {
+            endGame();
+            turnDisplay.innerText = `Game over! Tie!`;
+        }
     }
 
     const initBoard = () => {
@@ -163,23 +182,33 @@ const ScreenController = (function() {
             button.innerText = '';
             button.addEventListener('click', clickHandlerBoard);
         });
-        
+        turnDisplay.innerText = `${players.getActivePlayer().name}'s turn`;
     }
     
+    const endGame = () => {
+        boardButtons.forEach((button) => {
+            button.removeEventListener('click', clickHandlerBoard);
+        });
+    };
+
     const updateScreen = () => {
         const boardState = board.getBoard();
         let index = 0;
 
+        turnDisplay.innerText = `${players.getActivePlayer().name}'s turn`;
         boardButtons.forEach((button) => {
             button.innerText = '';
         });
 
         boardState.forEach(row => {
             row.forEach(cell => {
-                // console.log(`${cell.getValue()} at ${boardButtons[index].dataset.row}, ${boardButtons[index].dataset.col}`);
-                // console.log(boardButtons[index]);
                 if (cell.getValue() !== 0) {
-                    boardButtons[index].innerText = cell.getValue();
+                    boardButtons[index].innerText = (cell.getValue() === 1) ? 'X' : 'O';
+                    if (cell.win) {
+                        boardButtons[index].style.color = 'white';
+                        boardButtons[index].style.fontWeight = 'bold';
+                        boardButtons[index].style.backgroundColor = 'green';
+                    }
                 }
                 index++;
             })
